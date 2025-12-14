@@ -1,0 +1,923 @@
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8" />
+  <title>Restoran Tomato</title>
+  <link rel="stylesheet" href="testo.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+</head>
+<body>
+  <button id="currencyToggle" class="currency-toggle">KM</button>
+  <div class="lang-dropdown">
+  <button id="langBtn" class="lang-btn">
+    <img id="langFlag" src="flags/hr.png" alt="HR">
+  </button>
+
+  <div class="lang-menu" id="langMenu">
+    <div data-lang="hr"><img src="flags/hr.png"><span>Hrvatski</span></div>
+    <div data-lang="en"><img src="flags/en.png"><span>English</span></div>
+    <div data-lang="it"><img src="flags/it.png"><span>Italiano</span></div>
+    <div data-lang="de"><img src="flags/de.png"><span>Deutsch</span></div>
+    <div data-lang="ph"><img src="flags/ph.png"><span>Tagalog</span></div>
+  </div>
+</div>
+
+
+  <div class="container">
+    <div class="header">
+      <h1>Restoran Tomato</h1>
+    </div>
+
+    <div class="categories">
+      <button class="category-btn active" data-category="sendvic">SENDVIČ</button>
+      <button class="category-btn" data-category="pizza">PIZZA</button>
+      <button class="category-btn" data-category="stekovi">STEKOVI</button>
+      <button class="category-btn" data-category="jelaponar">JELA PO NARUDŽBI</button>
+      <button class="category-btn" data-category="desert">DESERT</button>
+      <button class="category-btn" data-category="dorucak">DORUČAK</button>
+      <button class="category-btn" data-category="hladnapredjela">HLADNA PREDJELA</button>
+      <button class="category-btn" data-category="juhe">JUHE</button>
+      <button class="category-btn" data-category="prilozi">PRILOZI</button>
+      <button class="category-btn" data-category="jelaodpiletine">JELA OD PILETINE</button>
+      <button class="category-btn" data-category="tjestenina">TJESTENINA</button>
+      <button class="category-btn" data-category="novouponudi">NOVO U PONUDI</button>
+      <button class="category-btn" data-category="jelasarostilja">JELA SA ROŠTILJA</button>
+      <button class="category-btn" data-category="ribe">RIBE</button>
+      <button class="category-btn" data-category="napitci">NAPITCI</button>
+    </div>
+
+    <div class="menu-list" id="menuList"></div>
+  </div>
+
+  <!-- ====== ATLAS VIEWER OVERLAY ====== -->
+  <div id="atlas-viewer" aria-hidden="true">
+    <div id="atlas-viewer-inner" role="dialog" aria-modal="true">
+      <button id="atlas-close" aria-label="Zatvori">×</button>
+      <div id="atlas-loading">Učitavanje…</div>
+      <canvas id="atlas-canvas"></canvas>
+
+      <div class="viewer-controls">
+        <input id="atlas-slider" type="range" min="0" value="0">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ------------------
+       VALUTA const i rounding algoritam(X.00 or X.50)
+    ------------------ */
+    let currentCurrency = 'KM';
+    const EUR_RATE = 0.511; // 1 KM ≈ 0.511 €
+
+    function kmToEurRounded(kmPrice) {
+      const eur = kmPrice * EUR_RATE;
+      return Math.round(eur * 2) / 2;
+    }
+
+    /* ------------------
+       JEZIK
+       ------------------ */
+    let currentLang = 'hr'; // hr | en | it | de | ph
+
+    const translations = {
+      // KATEGORIJE
+      "SENDVIČ": { en: "Sandwiches", it: "Panini", de: "Sandwiches", ph: "mga Sandwich" },
+      "PIZZA": { en: "Pizza", it: "Pizza", de: "Pizza", ph: "Pizza" },
+      "STEKOVI": { en: "Steaks", it: "Bistecche", de: "Steaks", ph: "mga steak" },
+      "JELA PO NARUDŽBI": { en: "Dishes à la carte", it: "Piatti à la carte", de: "Gerichte à la carte", ph: "À la carte dishes" },
+      "DESERT": { en: "Desserts", it: "Dolci", de: "Desserts", ph: "Desserts" },
+      "DORUČAK": { en: "Breakfast", it: "Colazione", de: "Frühstück", ph: "almusal" },
+      "HLADNA PREDJELA": { en: "Cold starters", it: "Antipasti freddi", de: "Kalte Vorspeisen", ph: "malamig na panimula" },
+      "JUHE": { en: "Soups", it: "Zuppe", de: "Suppen", ph: "mga sopas" },
+      "PRILOZI": { en: "Side dishes", it: "Contorni", de: "Beilagen", ph: "Side dishes" },
+      "JELA OD PILETINE": { en: "Chicken dishes", it: "Piatti di pollo", de: "Hühnergerichte", ph: "ulam ng manok" },
+      "TJESTENINA": { en: "Pasta", it: "Pasta", de: "Pasta", ph: "Pasta" },
+      "NOVO U PONUDI": { en: "New in offer", it: "Novità", de: "Neu im Angebot", ph: "mga bagong ulam" },
+      "SALAte": { en: "Salads", it: "Insalate", de: "Salate", ph: "mga salad" },
+      "JELA SA ROŠTILJA": { en: "Grill dishes", it: "Piatti alla griglia", de: "Grillgerichte", ph: "mag-ihaw ng mga pinggan" },
+      "RIBE": { en: "Fish", it: "Pesce", de: "Fisch", ph: "isda" },
+      "NAPITCI": { en: "Drinks", it: "Bevande", de: "Getränke", ph: "inumin" },
+
+      // SENDVIČ
+      "SENDVIČ SA SIROM": { en: "Sandwich with cheese", it: "Panino al formaggio", de: "Sandwich mit Käse", ph: "sanwits na may keso" },
+      "SENDVIČ SA ŠUNKOM": { en: "Sandwich with ham", it: "Panino al prosciutto", de: "Sandwich mit Schinken", ph: "Sanwits na may ham" },
+      "SENDVIČ SA PRŠUTOM": { en: "Sandwich with prosciutto", it: "Panino al prosciutto crudo", de: "Sandwich mit Prosciutto", ph: "Sanwits na may prosciutto" },
+      "SENDVIČ SA TUNJEVINOM": { en: "Sandwich with tuna", it: "Panino al tonno", de: "Sandwich mit Thunfisch", ph: "Sandwits na may tuna" },
+      "HAMBURGER": { en: "Hamburger", it: "Hamburger", de: "Hamburger", ph: "Hamburger" },
+      "CHEESEBURGER": { en: "Cheeseburger", it: "Cheeseburger", de: "Cheeseburger", ph: "Cheeseburger" },
+      "CHICKENBURGER": { en: "Chicken burger", it: "Hamburger di pollo", de: "Hähnchenburger", ph: "Chicken burger" },
+      "BURGER": { en: "Burger", it: "Burger", de: "Burger", ph: "Burger" },
+      "TOST SA MASLAC I DZEM": { en: "Toast with butter and jam", it: "Toast con burro e marmellata", de: "Toast mit Butter und Marmelade", ph: "Toast na may mantikilya at jam" },
+      "TOST SA ŠUNKOM I SIROM": { en: "Toast with ham and cheese", it: "Toast con prosciutto e formaggio", de: "Toast mit Schinken und Käse", ph: "Toast na may ham at keso" },
+
+      // PIZZE
+      "VEGETARIANA": { en: "Vegetariana", it: "Vegetariana", de: "Vegetariana", ph: "Vegetariana" },
+      "FUNGHI": { en: "Funghi", it: "Funghi", de: "Funghi", ph: "Funghi" },
+      "TUNJEVINA": { en: "Tuna", it: "Tonno", de: "Thunfisch", ph: "Tuna" },
+      "PLODOVI MORA": { en: "Seafood", it: "Frutti di mare", de: "Meeresfrüchte", ph: "Seafood" },
+      "4 VRSTE SIRA": { en: "Four cheese", it: "Quattro formaggi", de: "Vier-Käse", ph: "Four cheese" },
+      "MOZZARELA": { en: "Mozzarella", it: "Mozzarella", de: "Mozzarella", ph: "Mozzarella" },
+      "PIZZA KRUH": { en: "Pizza bread", it: "Pane pizza", de: "Pizzabrot", ph: "Pizza bread" },
+      "MEXICANA": { en: "Mexicana", it: "Mexicana", de: "Mexicana", ph: "Mexicana" },
+      "4 GODIŠNJA DOBA": { en: "Four seasons", it: "Quattro stagioni", de: "Vier Jahreszeiten", ph: "Four seasons" },
+      "NAPOLI": { en: "Napoli", it: "Napoli", de: "Napoli", ph: "Napoli" },
+      "CAPRICIOSA": { en: "Capricciosa", it: "Capricciosa", de: "Capricciosa", ph: "Capricciosa" },
+      "MARGHERITA": { en: "Margherita", it: "Margherita", de: "Margherita", ph: "Margherita" },
+      "CALZONE": { en: "Calzone", it: "Calzone", de: "Calzone", ph: "Calzone" },
+      "TOMATO PIKANTE": { en: "Tomato Piccante", it: "Tomato Piccante", de: "Tomato Piccante", ph: "Tomato Piccante" },
+      "AL TOMATO": { en: "Al Tomato", it: "Al Tomato", de: "Al Tomato", ph: "Al Tomato" },
+      "HAWAI": { en: "Hawaii", it: "Hawaii", de: "Hawaii", ph: "Hawaii" },
+      "MEĐUGORJE": { en: "Međugorje", it: "Međugorje", de: "Međugorje", ph: "Međugorje" },
+      "S PILETINOM": { en: "With chicken", it: "Con pollo", de: "Mit Hähnchen", ph: "With chicken" },
+
+      // STEKOVI
+      "BIFTEK SA ŽARA": { en: "Grilled beef steak", it: "Bistecca di manzo alla griglia", de: "Gegrilltes Rindersteak", ph: "inihaw na beef steak" },
+      "BIFTEK SA ZELENIM PAPROM": { en: "Beef steak with green pepper", it: "Bistecca al pepe verde", de: "Rindersteak mit grünem Pfeffer", ph: "Steak na may berdeng paminta" },
+      "RAMSTEK SA ŽARA": { en: "Grilled rump steak", it: "Ramstek alla griglia", de: "Rumpsteak vom Grill", ph: "inihaw na rump steak" },
+      "RAMSTEK U FEFER SOSU": { en: "Rump steak in pepper sauce", it: "Ramstek al pepe", de: "Rumpsteak in Pfeffersauce", ph: "Rump steak sa pepper sauce" },
+      "STEK PLATA ZA 2 OSOBE": { en: "Steak plate for 2", it: "Piatto di bistecche per 2", de: "Steakplatte für 2", ph: "Steak plate para sa 2" },
+
+      // JELA PO NARUDŽBI
+      "BEČKI ODREZAK": { en: "Viennese schnitzel", it: "Cotoletta alla viennese", de: "Wiener Schnitzel", ph: "Viennese schnitzel" },
+      "ZAGREBAČKI ODREZAK": { en: "Zagreb schnitzel", it: "Cotoletta alla zagrebese", de: "Zagreber Schnitzel", ph: "Zagreb schnitzel" },
+      "NARAVNI ODREZAK": { en: "Natural schnitzel", it: "Bistecca naturale", de: "Natursteak", ph: "simpleng schnitzel" },
+
+      // DESERTI
+      "FERRERO ROCHER": { en: "Ferrero Rocher", it: "Ferrero Rocher", de: "Ferrero Rocher", ph: "Ferrero Rocher" },
+      "VOĆNA SALATA": { en: "Fruit salad", it: "Macedonia di frutta", de: "Obstsalat", ph: "salad ng prutas" },
+      "VOĆNI KUP": { en: "Fruit cup", it: "Coppa di frutta", de: "Fruchtbecher", ph: "tasa ng prutas" },
+      "JAGODA KUP": { en: "Strawberry cup", it: "Coppa alla fragola", de: "Erdbeerbecher", ph: "tasa ng strawberry" },
+      "CHERRY KUP": { en: "Cherry cup", it: "Coppa alla ciliegia", de: "Kirschbecher", ph: "Cherry cup" },
+      "BAILEYS KUP": { en: "Baileys cup", it: "Coppa Baileys", de: "Baileys-Becher", ph: "Baileys cup" },
+      "BANANA SPLIT": { en: "Banana split", it: "Banana split", de: "Bananensplit", ph: "Banana split" },
+      "LEDENA KAVA": { en: "Iced coffee", it: "Caffè freddo", de: "Eiskaffee", ph: "may yelong kape" },
+      "PALAČINKA SA LIMUNOM": { en: "Pancake with lemon", it: "Crêpe al limone", de: "Pfannkuchen mit Zitrone", ph: "Pancake na may lemon" },
+      "PALAČINKA SA ORASIMA": { en: "Pancake with walnuts", it: "Crêpe alle noci", de: "Pfannkuchen mit Walnüssen", ph: "Pancake na may mga walnuts" },
+      "PALAČINKA SA MARMELADOM": { en: "Pancake with jam", it: "Crêpe con marmellata", de: "Pfannkuchen mit Marmelade", ph: "Pancake na may jam" },
+      "PALAČINKA SA NUTELOM": { en: "Pancake with Nutella", it: "Crêpe alla Nutella", de: "Pfannkuchen mit Nutella", ph: "Pancake na may Nutella" },
+      "SOUFFLE": { en: "Soufflé", it: "Soufflé", de: "Soufflé", ph: "Soufflé" },
+      "SCONO": { en: "Scone", it: "Scone", de: "Scone", ph: "Scone" },
+      "CROISSANT": { en: "Croissant", it: "Cornetto", de: "Croissant", ph: "Croissant" },
+      "CHEESECAKE I ŠUMSKO VOĆE ": { en: "Cheesecake with forest fruit", it: "Cheesecake ai frutti di bosco", de: "Käsekuchen mit Waldbeeren", ph: "Cheesecake na may berries" },
+      "TIRAMISU": { en: "Tiramisu", it: "Tiramisù", de: "Tiramisu", ph: "Tiramisu" },
+      "CHEESECAKE OD SIRA I LIMUNA": { en: "Lemon cheesecake", it: "Cheesecake al limone", de: "Zitronen-Käsekuchen", ph: "Lemon cheesecake" },
+      "KOLAČ OD BADEMA I MARELICA": { en: "Almond and apricot cake", it: "Torta alle mandorle e albicocche", de: "Mandel-Aprikosen-Kuchen", ph: "Almond and apricot cake" },
+      "KOLAČ OD BADEMA I JAGODA": { en: "Almond and strawberry cake", it: "Torta alle mandorle e fragole", de: "Mandel-Erdbeer-Kuchen", ph: "Almond and strawberry cake" },
+
+      // DORUČAK
+      "OMLET MIJEŠANI": { en: "Mixed omelette", it: "Omelette mista", de: "Gemischtes Omelett", ph: "Mixed omelette" },
+      "OMLET SA GLJIVAMA": { en: "Omelette with mushrooms", it: "Omelette ai funghi", de: "Omelett mit Pilzen", ph: "Omelette with mushrooms" },
+      "IRSKI DORUČAK": { en: "Irish breakfast", it: "Colazione irlandese", de: "Irisches Frühstück", ph: "Irish breakfast" },
+      "JAJA NA OKO": { en: "Fried eggs", it: "Uova al tegamino", de: "Spiegeleier", ph: "Fried eggs" },
+      "JAJA SA KOBASICOM": { en: "Eggs with sausage", it: "Uova con salsiccia", de: "Eier mit Wurst", ph: "Eggs with sausage" },
+      "JAJA SA ŠUNKOM": { en: "Eggs with ham", it: "Uova con prosciutto", de: "Eier mit Schinken", ph: "Eggs with ham" },
+      "JAJA SA ŠPEKOM": { en: "Eggs with bacon", it: "Uova con pancetta", de: "Eier mit Speck", ph: "Eggs with bacon" },
+      "OMLET SA SIROM": { en: "Omelette with cheese", it: "Omelette al formaggio", de: "Omelett mit Käse", ph: "Omelette with cheese" },
+      "OMLET SA ŠUNKOM": { en: "Omelette with ham", it: "Omelette al prosciutto", de: "Omelett mit Schinken", ph: "Omelette with ham" },
+      "OMLET SA PRŠUTOM": { en: "Omelette with prosciutto", it: "Omelette al prosciutto crudo", de: "Omelett mit Prosciutto", ph: "Omelette with prosciutto" },
+
+      // HLADNA PREDJELA
+      "PRŠUT": { en: "Prosciutto", it: "Prosciutto", de: "Prosciutto", ph: "Prosciutto" },
+      "LIVANJSKI SIR": { en: "Livno cheese", it: "Formaggio di Livno", de: "Livno-Käse", ph: "Livno cheese" },
+      "KAJMAK": { en: "Kaymak", it: "Kaymak", de: "Kaymak", ph: "Kaymak" },
+      "PEKSIMETI": { en: "Croutons / rusks", it: "Fette biscottate", de: "Zwieback", ph: "Rusks" },
+      "BRUSKETE": { en: "Bruschette", it: "Bruschette", de: "Bruschetta", ph: "Bruschette" },
+
+      // JUHE
+      "OD RAJČICE": { en: "Tomato soup", it: "Zuppa di pomodoro", de: "Tomatensuppe", ph: "Tomato soup" },
+      "KOKOŠIJA": { en: "Chicken soup", it: "Zuppa di pollo", de: "Hühnersuppe", ph: "Chicken soup" },
+      "OD GLJIVA": { en: "Mushroom soup", it: "Zuppa di funghi", de: "Pilzsuppe", ph: "Mushroom soup" },
+      "GOVEĐA": { en: "Beef soup", it: "Zuppa di manzo", de: "Rindssuppe", ph: "Beef soup" },
+
+      // PRILOZI
+      "POMFRIT": { en: "French fries", it: "Patatine fritte", de: "Pommes frites", ph: "French fries" },
+      "PRŽENI KRUMPIR": { en: "Fried potatoes", it: "Patate fritte", de: "Bratkartoffeln", ph: "Fried potatoes" },
+      "REZANI KRUMPIR": { en: "Potato wedges", it: "Spicchi di patate", de: "Kartoffelspalten", ph: "Potato wedges" },
+      "RIŽA": { en: "Rice", it: "Riso", de: "Reis", ph: "Rice" },
+      "BLITVA": { en: "Swiss chard", it: "Bietola", de: "Mangold", ph: "Swiss chard" },
+      "THOMY MAJONEZA": { en: "Thomy mayonnaise", it: "Maionese Thomy", de: "Thomy Mayonnaise", ph: "Thomy mayonnaise" },
+      "KEČAP": { en: "Ketchup", it: "Ketchup", de: "Ketchup", ph: "Ketchup" },
+      "TARTAR SOS": { en: "Tartar sauce", it: "Salsa tartara", de: "Sauce tartare", ph: "Tartar sauce" },
+      "MASLINE": { en: "Olives", it: "Olive", de: "Oliven", ph: "Olives" },
+      "FEFERONI": { en: "Hot peppers", it: "Peperoncini", de: "Peperoni (scharf)", ph: "Hot peppers" },
+      "AJVAR": { en: "Ajvar", it: "Ajvar", de: "Ajvar", ph: "Ajvar" },
+      "KRUH": { en: "Bread", it: "Pane", de: "Brot", ph: "Bread" },
+
+      // JELA OD PILETINE
+      "PILETINA SA ŠUNKOM I SIROM ": { en: "Chicken with ham and cheese", it: "Pollo con prosciutto e formaggio", de: "Hähnchen mit Schinken und Käse", ph: "Chicken with ham and cheese" },
+      "POHANA PILETINA": { en: "Breaded chicken", it: "Pollo impanato", de: "Paniertes Hähnchen", ph: "Breaded chicken" },
+      "PILEĆA ŠNICLA": { en: "Chicken schnitzel", it: "Cotoletta di pollo", de: "Hähnchenschnitzel", ph: "Chicken schnitzel" },
+      "PILEĆI RAŽNJIĆI": { en: "Chicken skewers", it: "Spiedini di pollo", de: "Hähnchenspieße", ph: "Chicken skewers" },
+      "PILETINA U GORGONZOLI": { en: "Chicken in gorgonzola sauce", it: "Pollo alla gorgonzola", de: "Hähnchen in Gorgonzolasauce", ph: "Chicken in gorgonzola sauce" },
+      "PILEĆi NUGGETSI": { en: "Chicken nuggets", it: "Chicken nuggets", de: "Chicken Nuggets", ph: "Chicken nuggets" },
+
+      // TJESTENINA
+      "ŠPAGETI BOLOGNESE": { en: "Spaghetti Bolognese", it: "Spaghetti alla bolognese", de: "Spaghetti Bolognese", ph: "Spaghetti Bolognese" },
+      "ŠPAGETI CARBONARA": { en: "Spaghetti Carbonara", it: "Spaghetti alla carbonara", de: "Spaghetti Carbonara", ph: "Spaghetti Carbonara" },
+      "ŠPAGETI SA 4 VRSTE SIRA": { en: "Spaghetti four cheese", it: "Spaghetti ai quattro formaggi", de: "Spaghetti Vier-Käse", ph: "Spaghetti four cheese" },
+      "ŠPAGETI AGLIO E OLIO": { en: "Spaghetti aglio e olio", it: "Spaghetti aglio e olio", de: "Spaghetti aglio e olio", ph: "Spaghetti aglio e olio" },
+      "LAZANJE POVRĆE": { en: "Vegetable lasagna", it: "Lasagne alle verdure", de: "Gemüselasagne", ph: "Vegetable lasagna" },
+      "LAZANJE BOLOGNESE": { en: "Lasagna Bolognese", it: "Lasagne alla bolognese", de: "Lasagne Bolognese", ph: "Lasagna Bolognese" },
+
+      // NOVO U PONUDI
+      "RIBLJA PAŠTETA": { en: "Fish pâté", it: "Paté di pesce", de: "Fischpastete", ph: "Fish pâté" },
+      "FOCCACIA": { en: "Focaccia", it: "Focaccia", de: "Focaccia", ph: "Focaccia" },
+      "ZELENE TAGLIATELLE SA KOZICAMA": { en: "Green tagliatelle with prawns", it: "Tagliatelle verdi con gamberi", de: "Grüne Tagliatelle mit Garnelen", ph: "Green tagliatelle with prawns" },
+      "ZELENE TAGLIATELLE SA BIFTEKOM": { en: "Green tagliatelle with beefsteak", it: "Tagliatelle verdi con bistecca", de: "Grüne Tagliatelle mit Steak", ph: "Green tagliatelle with steak" },
+      "MAKARONI SA TUNJEVINOM": { en: "Macaroni with tuna", it: "Maccheroni al tonno", de: "Makkaroni mit Thunfisch", ph: "Macaroni with tuna" },
+      "MAKARONI SA POVRĆEM": { en: "Macaroni with vegetables", it: "Maccheroni alle verdure", de: "Makkaroni mit Gemüse", ph: "Macaroni with vegetables" },
+      "MAKARONI SA PILEINOM": { en: "Macaroni with chicken", it: "Maccheroni al pollo", de: "Makkaroni mit Hähnchen", ph: "Macaroni with chicken" },
+
+      // SALATE
+      "MIJEŠANA SALATA": { en: "Mixed salad", it: "Insalata mista", de: "Gemischter Salat", ph: "Mixed salad" },
+      "RAJČICA": { en: "Tomato salad", it: "Insalata di pomodori", de: "Tomatensalat", ph: "Tomato salad" },
+      "KRASTAVAC": { en: "Cucumber salad", it: "Insalata di cetrioli", de: "Gurkensalat", ph: "Cucumber salad" },
+      "KUPUS": { en: "Cabbage salad", it: "Insalata di cavolo", de: "Krautsalat", ph: "Cabbage salad" },
+      "ŠOPSKA SALATA": { en: "Shopska salad", it: "Insalata shopska", de: "Schopska-Salat", ph: "Shopska salad" },
+      "ZELENA SALATA": { en: "Green salad", it: "Insalata verde", de: "Grüner Salat", ph: "Green salad" },
+      "MIJEŠANA SALATA PLATA(SA OVČIJIM SIROM)": { en: "Mixed salad platter (with sheep cheese)", it: "Piatto di insalata mista (con formaggio di pecora)", de: "Gemischte Salatplatte (mit Schafskäse)", ph: "Mixed salad platter (sheep cheese)" },
+      "MIJEŠANA SALATA PLATA(SA PILETINOM)": { en: "Mixed salad platter (with chicken)", it: "Piatto di insalata mista (con pollo)", de: "Gemischte Salatplatte (mit Hähnchen)", ph: "Mixed salad platter (chicken)" },
+      "MIJEŠANA SALATA PLATA(S TUNJEVINOM)": { en: "Mixed salad platter (with tuna)", it: "Piatto di insalata mista (con tonno)", de: "Gemischte Salatplatte (mit Thunfisch)", ph: "Mixed salad platter (tuna)" },
+      "MIJEŠANA SALATA PLATA(S PLODOVIMA MORA)": { en: "Mixed salad platter (seafood)", it: "Piatto di insalata mista (frutti di mare)", de: "Gemischte Salatplatte (Meeresfrüchte)", ph: "Mixed salad platter (seafood)" },
+      "MIJEŠANA SALATA PLATA(S 4 VRSTE SIRA)": { en: "Mixed salad platter (four cheese)", it: "Piatto di insalata mista (quattro formaggi)", de: "Gemischte Salatplatte (Vier-Käse)", ph: "Mixed salad platter (four cheese)" },
+      "MIJEŠANA SALATA PLATA(S BIFTEKOM)": { en: "Mixed salad platter (beefsteak)", it: "Piatto di insalata mista (bistecca)", de: "Gemischte Salatplatte (Steak)", ph: "Mixed salad platter (steak)" },
+      "MIJEŠANA SALATA PLATA(S SIROM I ŠUNKOM)": { en: "Mixed salad platter (cheese and ham)", it: "Piatto di insalata mista (formaggio e prosciutto)", de: "Gemischte Salatplatte (Käse und Schinken)", ph: "Mixed salad platter (cheese & ham)" },
+      "MOZZARELA SALATA": { en: "Mozzarella salad", it: "Insalata di mozzarella", de: "Mozzarella-Salat", ph: "Mozzarella salad" },
+
+      // JELA SA ROŠTILJA
+      "ĆEVAPI": { en: "Ćevapi", it: "Ćevapi", de: "Ćevapi", ph: "Ćevapi" },
+      "PLJESKAVICA": { en: "Pljeskavica", it: "Pljeskavica", de: "Pljeskavica", ph: "Pljeskavica" },
+      "MIJEŠANO MESO SA ŽARA ": { en: "Mixed grilled meat", it: "Carne mista alla griglia", de: "Gemischtes Grillfleisch", ph: "Mixed grilled meat" },
+      "KOBASICA": { en: "Sausage", it: "Salsiccia", de: "Wurst", ph: "Sausage" },
+      "PLJESKAVICA SA SIROM": { en: "Pljeskavica with cheese", it: "Pljeskavica con formaggio", de: "Pljeskavica mit Käse", ph: "Pljeskavica with cheese" },
+      "RAŽNJIĆI TELEĆI": { en: "Veal skewers", it: "Spiedini di vitello", de: "Kalbsspieße", ph: "Veal skewers" },
+      "RAŽNJIĆI SVINJSKI": { en: "Pork skewers", it: "Spiedini di maiale", de: "Schweinespieße", ph: "Pork skewers" },
+      "KOTLETI TELEĆI": { en: "Veal cutlets", it: "Costolette di vitello", de: "Kalbskoteletts", ph: "Veal cutlets" },
+      "KOTLETI SVINJSKI": { en: "Pork cutlets", it: "Costolette di maiale", de: "Schweinekoteletts", ph: "Pork cutlets" },
+      "KOTLETI JANJEĆI": { en: "Lamb cutlets", it: "Costolette di agnello", de: "Lammkoteletts", ph: "Lamb cutlets" },
+      "JANJEĆA PLATA ZA 2 OSOBE": { en: "Lamb platter for 2", it: "Piatto di agnello per 2", de: "Lammplatte für 2", ph: "Lamb platter for 2" },
+      "SVINJSKI FILE NA ŽARU ": { en: "Grilled pork fillet", it: "Filetto di maiale alla griglia", de: "Schweinefilet vom Grill", ph: "Grilled pork fillet" },
+      "PUNJENI SVINJSKI FILE": { en: "Stuffed pork fillet", it: "Filetto di maiale ripieno", de: "Gefülltes Schweinefilet", ph: "Stuffed pork fillet" },
+      "POVRĆE SA ŽARA": { en: "Grilled vegetables", it: "Verdure alla griglia", de: "Gegrilltes Gemüse", ph: "Grilled vegetables" },
+
+      // RIBE
+      "PASTRMKA": { en: "Trout", it: "Trota", de: "Forelle", ph: "Trout" },
+      "ORADA": { en: "Sea bream", it: "Orata", de: "Goldbrasse", ph: "Sea bream" },
+      "LUBIN-BRANCIN": { en: "Sea bass", it: "Branzino", de: "Wolfsbarsch", ph: "Sea bass" },
+      "LOSOS SA ŽARA": { en: "Grilled salmon", it: "Salmone alla griglia", de: "Gegrillter Lachs", ph: "Grilled salmon" },
+      "LOSOS FILE U BIJELOM UMAKU": { en: "Salmon fillet in white sauce", it: "Filetto di salmone in salsa bianca", de: "Lachsfilet in Weißsoße", ph: "Salmon fillet in white sauce" },
+      "OSLIĆ FILETI": { en: "Hake fillets", it: "Filetti di nasello", de: "Seehechtfilets", ph: "Hake fillets" },
+      "LIGNJE SA ŽARA": { en: "Grilled squid", it: "Calamari alla griglia", de: "Gegrillte Tintenfische", ph: "Grilled squid" },
+
+      // NAPITCI – samo nazivi, cijene ostaju iz menija
+      "Kava": { en: "Coffee", it: "Caffè", de: "Kaffee", ph: "Coffee" },
+      "Bijela kava": { en: "White coffee", it: "Caffè latte", de: "Milchkaffee", ph: "White coffee" },
+      "Kava bez kofeina": { en: "Decaf coffee", it: "Caffè decaffeinato", de: "Entkoffeinierter Kaffee", ph: "Decaf coffee" },
+      "Bijela velika kava": { en: "Large white coffee", it: "Caffè latte grande", de: "Großer Milchkaffee", ph: "Large white coffee" },
+      "Cappucino": { en: "Cappuccino", it: "Cappuccino", de: "Cappuccino", ph: "Cappuccino" },
+      "Nescafe kava": { en: "Nescafé coffee", it: "Caffè Nescafé", de: "Nescafé Kaffee", ph: "Nescafé coffee" },
+      "Nescafe kava sa mlijekom": { en: "Nescafé with milk", it: "Nescafé con latte", de: "Nescafé mit Milch", ph: "Nescafé with milk" },
+      "Čaj": { en: "Tea", it: "Tè", de: "Tee", ph: "Tea" },
+      "Čaj sa mlijekom": { en: "Tea with milk", it: "Tè con latte", de: "Tee mit Milch", ph: "Tea with milk" },
+      "Čaj sa rumom": { en: "Tea with rum", it: "Tè al rum", de: "Tee mit Rum", ph: "Tea with rum" },
+      "Čaj sa medom": { en: "Tea with honey", it: "Tè con miele", de: "Tee mit Honig", ph: "Tea with honey" },
+      "Topla Čokolada": { en: "Hot chocolate", it: "Cioccolata calda", de: "Heiße Schokolade", ph: "Hot chocolate" },
+      "Coca-cola": { en: "Coca-Cola", it: "Coca-Cola", de: "Coca-Cola", ph: "Coca-Cola" },
+      "Coca-cola zero": { en: "Coca-Cola Zero", it: "Coca-Cola Zero", de: "Coca-Cola Zero", ph: "Coca-Cola Zero" },
+      "Fanta": { en: "Fanta", it: "Fanta", de: "Fanta", ph: "Fanta" },
+      "Sprite": { en: "Sprite", it: "Sprite", de: "Sprite", ph: "Sprite" },
+      "Tonik": { en: "Tonic", it: "Tonica", de: "Tonic Water", ph: "Tonic" },
+      "Bitter lemon": { en: "Bitter lemon", it: "Bitter lemon", de: "Bitter Lemon", ph: "Bitter lemon" },
+      "Cockta": { en: "Cockta", it: "Cockta", de: "Cockta", ph: "Cockta" },
+      "Orangina": { en: "Orangina", it: "Orangina", de: "Orangina", ph: "Orangina" },
+      "Juice naranČa": { en: "Orange juice", it: "Succo d'arancia", de: "Orangensaft", ph: "Orange juice" },
+      "Juice jabuka": { en: "Apple juice", it: "Succo di mela", de: "Apfelsaft", ph: "Apple juice" },
+      "Juice marelica": { en: "Apricot juice", it: "Succo di albicocca", de: "Aprikosensaft", ph: "Apricot juice" },
+      "Juice ananas": { en: "Pineapple juice", it: "Succo d'ananas", de: "Ananassaft", ph: "Pineapple juice" },
+      "Juice crni ribiz": { en: "Blackcurrant juice", it: "Succo di ribes nero", de: "Schwarzer Johannisbeersaft", ph: "Blackcurrant juice" },
+      "Ledeni Čaj": { en: "Iced tea", it: "Tè freddo", de: "Eistee", ph: "Iced tea" },
+      "Limunada": { en: "Lemonade", it: "Limonata", de: "Limonade", ph: "Lemonade" },
+      "Cedevita": { en: "Cedevita", it: "Cedevita", de: "Cedevita", ph: "Cedevita" },
+      "OranDžada": { en: "Orange soda", it: "Aranciata", de: "Orangenlimonade", ph: "Orange soda" },
+      "Voda mineralna 0,20l": { en: "Mineral water 0.20l", it: "Acqua minerale 0,20l", de: "Mineralwasser 0,20l", ph: "Mineral water 0.20l" },
+      "Voda mineralna 0,5l": { en: "Mineral water 0.5l", it: "Acqua minerale 0,5l", de: "Mineralwasser 0,5l", ph: "Mineral water 0.5l" },
+      "Voda mineralna 1l": { en: "Mineral water 1l", it: "Acqua minerale 1l", de: "Mineralwasser 1l", ph: "Mineral water 1l" },
+      "Voda negazirana 0,20l": { en: "Still water 0.20l", it: "Acqua naturale 0,20l", de: "Stilles Wasser 0,20l", ph: "Still water 0.20l" },
+      "Voda negazirana 0,5l": { en: "Still water 0.5l", it: "Acqua naturale 0,5l", de: "Stilles Wasser 0,5l", ph: "Still water 0.5l" },
+      "Voda negazirana 0.75l": { en: "Still water 0.75l", it: "Acqua naturale 0,75l", de: "Stilles Wasser 0,75l", ph: "Still water 0.75l" },
+      "Spezi 0.30l": { en: "Spezi 0.30l", it: "Spezi 0,30l", de: "Spezi 0,30l", ph: "Spezi 0.30l" },
+      "Spezi 0.50l": { en: "Spezi 0.50l", it: "Spezi 0,50l", de: "Spezi 0,50l", ph: "Spezi 0.50l" },
+      "Šorle 0,30l": { en: "Schorle 0.30l", it: "Schorle 0,30l", de: "Schorle 0,30l", ph: "Spritzer 0.30l" },
+      "Šorle 0,50l": { en: "Schorle 0.50l", it: "Schorle 0,50l", de: "Schorle 0,50l", ph: "Spritzer 0.50l" },
+      "Pelinkovac": { en: "Pelinkovac", it: "Pelinkovac", de: "Pelinkovac", ph: "Pelinkovac" },
+      "Vlahovac": { en: "Vlahovac", it: "Vlahovac", de: "Vlahovac", ph: "Vlahovac" },
+      "Rum": { en: "Rum", it: "Rum", de: "Rum", ph: "Rum" },
+      "KruŠkovac": { en: "Pear liqueur", it: "Liquore alla pera", de: "Birnenlikör", ph: "Pear liqueur" },
+      "Bacardi": { en: "Bacardi", it: "Bacardi", de: "Bacardi", ph: "Bacardi" },
+      "Stock": { en: "Stock", it: "Stock", de: "Stock", ph: "Stock" },
+      "Martell": { en: "Martell", it: "Martell", de: "Martell", ph: "Martell" },
+      "Gin": { en: "Gin", it: "Gin", de: "Gin", ph: "Gin" },
+      "Gin Beefe": { en: "Beefeater gin", it: "Gin Beefeater", de: "Beefeater Gin", ph: "Beefeater gin" },
+      "Amaro": { en: "Amaro", it: "Amaro", de: "Amaro", ph: "Amaro" },
+      "ViŠnjevac": { en: "Sour cherry liqueur", it: "Liquore di amarena", de: "Sauerkirschlikör", ph: "Cherry liqueur" },
+      "Orahovac": { en: "Walnut liqueur", it: "Liquore di noci", de: "Nusslikör", ph: "Walnut liqueur" },
+      "MedovaČa": { en: "Honey brandy", it: "Grappa al miele", de: "Honigschnaps", ph: "Honey brandy" },
+      "Malibu": { en: "Malibu", it: "Malibu", de: "Malibu", ph: "Malibu" },
+      "Jägermeister": { en: "Jägermeister", it: "Jägermeister", de: "Jägermeister", ph: "Jägermeister" },
+      "Underberg": { en: "Underberg", it: "Underberg", de: "Underberg", ph: "Underberg" },
+      "Campary": { en: "Campari", it: "Campari", de: "Campari", ph: "Campari" },
+      "Aperol": { en: "Aperol", it: "Aperol", de: "Aperol", ph: "Aperol" },
+      "Aperol sprit": { en: "Aperol spritz", it: "Aperol spritz", de: "Aperol Spritz", ph: "Aperol spritz" },
+      "Martini": { en: "Martini", it: "Martini", de: "Martini", ph: "Martini" },
+      "Votka smirnoff": { en: "Smirnoff vodka", it: "Vodka Smirnoff", de: "Smirnoff Wodka", ph: "Smirnoff vodka" },
+      "Votka": { en: "Vodka", it: "Vodka", de: "Wodka", ph: "Vodka" },
+      "Loza": { en: "Loza (grape brandy)", it: "Grappa Loza", de: "Traubenschnaps", ph: "Loza grape brandy" },
+      "Travarica": { en: "Herbal brandy", it: "Grappa alle erbe", de: "Kräuterschnaps", ph: "Herbal brandy" },
+      "Viljamovka": { en: "Williams pear brandy", it: "Grappa Williams", de: "Williams-Birnenbrand", ph: "Williams pear brandy" },
+      "Balantine's": { en: "Ballantine's", it: "Ballantine's", de: "Ballantine's", ph: "Ballantine's" },
+      "Chivas regal": { en: "Chivas Regal", it: "Chivas Regal", de: "Chivas Regal", ph: "Chivas Regal" },
+      "Johnny Walker": { en: "Johnnie Walker", it: "Johnnie Walker", de: "Johnnie Walker", ph: "Johnnie Walker" },
+      "Jameson": { en: "Jameson", it: "Jameson", de: "Jameson", ph: "Jameson" },
+      "Jack Daniel's": { en: "Jack Daniel's", it: "Jack Daniel's", de: "Jack Daniel's", ph: "Jack Daniel's" },
+      "Hennesy": { en: "Hennessy", it: "Hennessy", de: "Hennessy", ph: "Hennessy" },
+      "Konjak": { en: "Cognac", it: "Cognac", de: "Cognac", ph: "Cognac" },
+      "Bailey's": { en: "Baileys", it: "Baileys", de: "Baileys", ph: "Baileys" },
+      /// TRANSLATIONS FOR UI ELEMENTS///
+      "Pogledaj jelo": {en: "View dish",it: "Vedi piatto",de:"Gericht ansehen",ph: "Tingnan ang ulam"}
+
+    };
+
+    function t(text) {
+      if (currentLang === 'hr') return text;
+      const entry = translations[text];
+      return entry && entry[currentLang] ? entry[currentLang] : text;
+    }
+
+    const categoryLabels = {
+      sendvic: "SENDVIČ",
+      pizza: "PIZZA",
+      stekovi: "STEKOVI",
+      jelaponar: "JELA PO NARUDŽBI",
+      desert: "DESERT",
+      dorucak: "DORUČAK",
+      hladnapredjela: "HLADNA PREDJELA",
+      juhe: "JUHE",
+      prilozi: "PRILOZI",
+      jelaodpiletine: "JELA OD PILETINE",
+      tjestenina: "TJESTENINA",
+      novouponudi: "NOVO U PONUDI",
+      salate: "SALAte",
+      jelasarostilja: "JELA SA ROŠTILJA",
+      ribe: "RIBE",
+      napitci: "NAPITCI"
+    };
+
+    /* ------------------
+       MENU PODACI
+       ------------------ */
+    const menu = {
+      sendvic: [
+        { name: "SENDVIČ SA SIROM", description: "Description for item A4", price: 8 },
+        { name: "SENDVIČ SA ŠUNKOM", description: "Description for item A5", price: 9 },
+        { name: "SENDVIČ SA PRŠUTOM", description: "Description for item A6", price: 11 },
+        { name: "SENDVIČ SA TUNJEVINOM", description: "Description for item A7", price: 12 },
+        { name: "HAMBURGER", description: "Description for item A8", price: 11 },
+        { name: "CHEESEBURGER", description: "Description for item A9", price: 13 },
+        { name: "CHICKENBURGER", description: "Description for item A10", price: 13 },
+        { name: "BURGER", description: "Description for item A10", price: 14 },
+        { name: "TOST SA MASLAC I DZEM", description: "Description for item A10", price: 9 },
+        { name: "TOST SA ŠUNKOM I SIROM", description: "Description for item A10", price: 7 }
+      ],
+      pizza: [
+        { name: "VEGETARIANA", description: "Description for item B1", price: 17 },
+        { name: "FUNGHI", description: "Description for item B2", price: 17 },
+        { name: "TUNJEVINA", description: "Description for item B3", price: 18 },
+        { name: "PLODOVI MORA", description: "Description for item B4", price: 18 },
+        { name: "4 VRSTE SIRA", description: "Description for item B5", price: 18 },
+        { name: "MOZZARELA", description: "Description for item B6", price: 18 },
+        { name: "PIZZA KRUH", description: "Description for item B7", price: 8 },
+        { name: "MEXICANA", description: "Description for item B8", price: 18 },
+        { name: "4 GODIŠNJA DOBA", description: "Description for item B9", price: 19 },
+        { name: "NAPOLI", description: "Description for item B10", price: 18 },
+        { name: "CAPRICIOSA", description: "Description for item B11", price: 18 },
+        { name: "MARGHERITA", description: "Description for item B13", price: 16 },
+        { name: "CALZONE", description: "Description for item B14", price: 17 },
+        { name: "TOMATO PIKANTE", description: "Description for item B15", price: 20 },
+        { name: "AL TOMATO", description: "Description for item B16", price: 20 },
+        { name: "HAWAI", description: "Description for item B17", price: 18 },
+        { name: "MEĐUGORJE", description: "Description for item B18", price: 20 },
+        { name: "S PILETINOM", description: "Description for item B19", price: 19 }
+      ],
+      stekovi: [
+        { name: "BIFTEK SA ŽARA", description: "Description for item C1", price: 48 },
+        { name: "BIFTEK SA ZELENIM PAPROM", description: "Description for item C2", price: 50 },
+        { name: "RAMSTEK SA ŽARA", description: "Description for item C1", price: 32 },
+        { name: "RAMSTEK U FEFER SOSU", description: "Description for item C3", price: 34 },
+        { name: "STEK PLATA ZA 2 OSOBE", description: "Description for item C4", price: 74 }
+      ],
+      jelaponar: [
+        { name: "BEČKI ODREZAK", description: "Description for item D1", price: 28 },
+        { name: "ZAGREBAČKI ODREZAK", description: "Description for item D2", price: 32 },
+        { name: "NARAVNI ODREZAK", description: "Description for item D3", price: 28 }
+      ],
+      desert: [
+        { name: "FERRERO ROCHER", description: "Description for item E5", price: 9 },
+        { name: "VOĆNA SALATA", description: "Description for item E6", price: 11 },
+        { name: "VOĆNI KUP", description: "Description for item E7", price: 13 },
+        { name: "JAGODA KUP", description: "Description for item E8", price: 13 },
+        { name: "CHERRY KUP", description: "Description for item E9", price: 14 },
+        { name: "BAILEYS KUP", description: "Description for item E10", price: 14 },
+        { name: "BANANA SPLIT", description: "Description for item E11", price: 14 },
+        { name: "LEDENA KAVA", description: "Description for item E12", price: 12 },
+        { name: "PALAČINKA SA LIMUNOM", description: "Description for item E13", price: 8 },
+        { name: "PALAČINKA SA ORASIMA", description: "Description for item E14", price: 8 },
+        { name: "PALAČINKA SA MARMELADOM", description: "Description for item E15", price: 8 },
+        { name: "PALAČINKA SA NUTELOM", description: "Description for item E16", price: 9 },
+        { name: "SOUFFLE", description: "Description for item E17", price: 9 },
+        { name: "SCONO", description: "Description for item E18", price: 6 },
+        { name: "CROISSANT", description: "Description for item E19", price: 3 },
+        { name: "CHEESECAKE I ŠUMSKO VOĆE ", description: "Description for item E20", price: 9 },
+        { name: "TIRAMISU", description: "Description for item E21", price: 8 },
+        { name: "CHEESECAKE OD SIRA I LIMUNA", description: "Description for item E22", price: 9 },
+        { name: "KOLAČ OD BADEMA I MARELICA", description: "Description for item E23", price: 9 },
+        { name: "KOLAČ OD BADEMA I JAGODA", description: "Description for item E23", price: 9 }
+      ],
+      dorucak: [
+        { name: "OMLET MIJEŠANI", description: "Description for item A1", price: 17 },
+        { name: "OMLET SA GLJIVAMA", description: "Description for item A2", price: 16 },
+        { name: "IRSKI DORUČAK", description: "Description for item A3", price: 18 },
+        { name: "JAJA NA OKO", description: "Description for item A3", price: 5 },
+        { name: "JAJA SA KOBASICOM", description: "Description for item A3", price: 17 },
+        { name: "JAJA SA ŠUNKOM", description: "Description for item A3", price: 16 },
+        { name: "JAJA SA ŠPEKOM", description: "Description for item A3", price: 17 },
+        { name: "OMLET SA SIROM", description: "Description for item A3", price: 14 },
+        { name: "OMLET SA ŠUNKOM", description: "Description for item A3", price: 15 },
+        { name: "OMLET SA PRŠUTOM", description: "Description for item A3", price: 18 }
+      ],
+      hladnapredjela: [
+        { name: "PRŠUT", description: "Description for item F1", price: 16 },
+        { name: "LIVANJSKI SIR", description: "Description for item F2", price: 8 },
+        { name: "KAJMAK", description: "Description for item F3", price: 6 },
+        { name: "PEKSIMETI", description: "Description for item F4", price: 8 },
+        { name: "BRUSKETE", description: "Description for item F5", price: 8 }
+      ],
+      juhe: [
+        { name: "OD RAJČICE", description: "Description for item G1", price: 7 },
+        { name: "KOKOŠIJA", description: "Description for item G2", price: 7 },
+        { name: "OD GLJIVA", description: "Description for item G3", price: 7 },
+        { name: "GOVEĐA", description: "Description for item G3", price: 7 }
+      ],
+      prilozi: [
+        { name: "POMFRIT", description: "Description for item H1", price: 7 },
+        { name: "PRŽENI KRUMPIR", description: "Description for item H2", price: 7 },
+        { name: "REZANI KRUMPIR", description: "Description for item H3", price: 7 },
+        { name: "RIŽA", description: "Description for item H4", price: 7 },
+        { name: "BLITVA", description: "Description for item H5", price: 9 },
+        { name: "THOMY MAJONEZA", description: "Description for item H6", price: 1 },
+        { name: "KEČAP", description: "Description for item H7", price: 1 },
+        { name: "TARTAR SOS", description: "Description for item H8", price: 2 },
+        { name: "MASLINE", description: "Description for item H9", price: 4 },
+        { name: "FEFERONI", description: "Description for item H10", price: 4 },
+        { name: "AJVAR", description: "Description for item H10", price: 2 },
+        { name: "KRUH", description: "Description for item H10", price: 2 }
+      ],
+      jelaodpiletine: [
+        { name: "PILETINA SA ŠUNKOM I SIROM ", description: "Description for item I1", price: 22 },
+        { name: "POHANA PILETINA", description: "Description for item I2", price: 22 },
+        { name: "PILEĆA ŠNICLA", description: "Description for item I3", price: 21 },
+        { name: "PILEĆI RAŽNJIĆI", description: "Description for item I4", price: 21 },
+        { name: "PILETINA U GORGONZOLI", description: "Description for item I5", price: 22 },
+        { name: "PILEĆi NUGGETSI", description: "Description for item I6", price: 22 }
+      ],
+      tjestenina: [
+        { name: "ŠPAGETI BOLOGNESE", description: "Description for item J1", price: 19 },
+        { name: "ŠPAGETI CARBONARA", description: "Description for item J2", price: 18 },
+        { name: "ŠPAGETI SA 4 VRSTE SIRA", description: "Description for item J3", price: 18 },
+        { name: "ŠPAGETI AGLIO E OLIO", description: "Description for item J4", price: 17 },
+        { name: "LAZANJE POVRĆE", description: "Description for item J5", price: 19 },
+        { name: "LAZANJE BOLOGNESE", description: "Description for item J6", price: 20 }
+      ],
+      novouponudi: [
+        { name: "RIBLJA PAŠTETA", description: "Description for item K1", price: 14 },
+        { name: "FOCCACIA", description: "Description for item K2", price: 8 },
+        { name: "ZELENE TAGLIATELLE SA KOZICAMA", description: "Description for item K3", price: 26 },
+        { name: "ZELENE TAGLIATELLE SA BIFTEKOM", description: "Description for item K4", price: 26 },
+        { name: "MAKARONI SA TUNJEVINOM", description: "Description for item K5", price: 19 },
+        { name: "MAKARONI SA POVRĆEM", description: "Description for item K6", price: 17 },
+        { name: "MAKARONI SA PILEINOM", description: "Description for item K7", price: 20 }
+      ],
+      salate: [
+        { name: "MIJEŠANA SALATA", description: "Description for item L1", price: 7 },
+        { name: "RAJČICA", description: "Description for item L2", price: 7 },
+        { name: "KRASTAVAC", description: "Description for item L3", price: 7 },
+        { name: "KUPUS", description: "Description for item L4", price: 7 },
+        { name: "ŠOPSKA SALATA", description: "Description for item L5", price: 9 },
+        { name: "ZELENA SALATA", description: "Description for item L6", price: 7 },
+        { name: "MIJEŠANA SALATA PLATA(SA OVČIJIM SIROM)", description: "Description for item L7", price: 19 },
+        { name: "MIJEŠANA SALATA PLATA(SA PILETINOM)", description: "Description for item L8", price: 22 },
+        { name: "MIJEŠANA SALATA PLATA(S TUNJEVINOM)", description: "Description for item L9", price: 23 },
+        { name: "MIJEŠANA SALATA PLATA(S PLODOVIMA MORA)", description: "Description for item L10", price: 23 },
+        { name: "MIJEŠANA SALATA PLATA(S 4 VRSTE SIRA)", description: "Description for item L11", price: 19 },
+        { name: "MIJEŠANA SALATA PLATA(S BIFTEKOM)", description: "Description for item L12", price: 26 },
+        { name: "MIJEŠANA SALATA PLATA(S SIROM I ŠUNKOM)", description: "Description for item L13", price: 18 },
+        { name: "MOZZARELA SALATA", description: "Description for item L14", price: 23 }
+      ],
+      jelasarostilja: [
+        { name: "ĆEVAPI", description: "Description for item M1", price: 17 },
+        { name: "PLJESKAVICA", description: "Description for item M2", price: 17 },
+        { name: "MIJEŠANO MESO SA ŽARA ", description: "Description for item M3", price: 36 },
+        { name: "KOBASICA", description: "Description for item M4", price: 16 },
+        { name: "PLJESKAVICA SA SIROM", description: "Description for item M5", price: 19 },
+        { name: "RAŽNJIĆI TELEĆI", description: "Description for item M6", price: 25 },
+        { name: "RAŽNJIĆI SVINJSKI", description: "Description for item M7", price: 20 },
+        { name: "KOTLETI TELEĆI", description: "Description for item M8", price: 25 },
+        { name: "KOTLETI SVINJSKI", description: "Description for item M9", price: 20 },
+        { name: "KOTLETI JANJEĆI", description: "Description for item M10", price: 36 },
+        { name: "JANJEĆA PLATA ZA 2 OSOBE", description: "Description for item M11", price: 66 },
+        { name: "SVINJSKI FILE NA ŽARU ", description: "Description for item M12", price: 20 },
+        { name: "PUNJENI SVINJSKI FILE", description: "Description for item M13", price: 25 },
+        { name: "POVRĆE SA ŽARA", description: "Description for item M14", price: 8 }
+      ],
+      ribe: [
+        { name: "PASTRMKA", description: "Description for item N1", price: 20 },
+        { name: "ORADA", description: "Description for item N2", price: 29 },
+        { name: "LUBIN-BRANCIN", description: "Description for item N3", price: 29 },
+        { name: "LOSOS SA ŽARA", description: "Description for item N4", price: 37 },
+        { name: "LOSOS FILE U BIJELOM UMAKU", description: "Description for item N5", price: 40 },
+        { name: "OSLIĆ FILETI", description: "Description for item N6", price: 18 },
+        { name: "LIGNJE SA ŽARA", description: "Description for item N7", price: 28 }
+      ],
+      napitci: [
+        { name: "Kava", price: 3 },
+        { name: "Bijela kava", price: 4 },
+        { name: "Kava bez kofeina", price: 3.5 },
+        { name: "Bijela velika kava", price: 5.5 },
+        { name: "Cappucino", price: 4.5 },
+        { name: "Nescafe kava", price: 4 },
+        { name: "Nescafe kava sa mlijekom", price: 4.5 },
+        { name: "Čaj", price: 3 },
+        { name: "Čaj sa mlijekom", price: 4 },
+        { name: "Čaj sa rumom", price: 4 },
+        { name: "Čaj sa medom", price: 4 },
+        { name: "Topla Čokolada", price: 5 },
+        { name: "Coca-cola", price: 5 },
+        { name: "Coca-cola zero", price: 5 },
+        { name: "Fanta", price: 5 },
+        { name: "Sprite", price: 5 },
+        { name: "Tonik", price: 5 },
+        { name: "Bitter lemon", price: 5 },
+        { name: "Cockta", price: 5 },
+        { name: "Orangina", price: 5 },
+        { name: "Juice naranČa", price: 5 },
+        { name: "Juice jabuka", price: 5 },
+        { name: "Juice marelica", price: 5 },
+        { name: "Juice ananas", price: 5 },
+        { name: "Juice crni ribiz", price: 5 },
+        { name: "Ledeni Čaj", price: 5 },
+        { name: "Limunada", price: 6 },
+        { name: "Cedevita", price: 5 },
+        { name: "OranDžada", price: 7 },
+        { name: "Voda mineralna 0,20l", price: 3 },
+        { name: "Voda mineralna 0,5l", price: 4 },
+        { name: "Voda mineralna 1l", price: 6 },
+        { name: "Voda negazirana 0,20l", price: 3 },
+        { name: "Voda negazirana 0,5l", price: 4 },
+        { name: "Voda negazirana 0.75l", price: 6 },
+        { name: "Spezi 0.30l", price: 5 },
+        { name: "Spezi 0.50l", price: 7 },
+        { name: "Šorle 0,30l", price: 5 },
+        { name: "Šorle 0,50l", price: 7 },
+        { name: "Pelinkovac", price: 3.5 },
+        { name: "Vlahovac", price: 3.5 },
+        { name: "Rum", price: 3.5 },
+        { name: "KruŠkovac", price: 3.5 },
+        { name: "Bacardi", price: 6 },
+        { name: "Stock", price: 3.5 },
+        { name: "Martell", price: 7.5 },
+        { name: "Gin", price: 3.5 },
+        { name: "Gin Beefe", price: 6 },
+        { name: "Amaro", price: 3.5 },
+        { name: "ViŠnjevac", price: 3.5 },
+        { name: "Orahovac", price: 3.5 },
+        { name: "MedovaČa", price: 3.5 },
+        { name: "Malibu", price: 6 },
+        { name: "Jägermeister", price: 5 },
+        { name: "Underberg", price: 4 },
+        { name: "Campary", price: 5 },
+        { name: "Aperol", price: 6 },
+        { name: "Aperol sprit", price: 9 },
+        { name: "Martini", price: 6 },
+        { name: "Votka smirnoff", price: 6 },
+        { name: "Votka", price: 3.5 },
+        { name: "Loza", price: 3 },
+        { name: "Travarica", price: 3 },
+        { name: "Viljamovka", price: 4.5 },
+        { name: "Balantine's", price: 6 },
+        { name: "Chivas regal", price: 9 },
+        { name: "Johnny Walker", price: 6 },
+        { name: "Jameson", price: 7 },
+        { name: "Jack Daniel's", price: 7 },
+        { name: "Hennesy", price: 8 },
+        { name: "Konjak", price: 3.5 },
+        { name: "Bailey's", price: 6 }
+      ]
+    };
+
+    /* ------------------
+       ATLAS VIEWER
+       ------------------ */
+
+    const ATLAS_FOLDER = 'images';
+    const ATLAS_EXT = '.png';
+    const DEFAULT_FRAMES = 5;
+
+    const atlasFrameOverrides = {
+      // 'napoli_atlas': 7,
+    };
+
+    const viewerEl = document.getElementById('atlas-viewer');
+    const canvas = document.getElementById('atlas-canvas');
+    const ctx = canvas.getContext('2d');
+    const slider = document.getElementById('atlas-slider');
+    const loadingPill = document.getElementById('atlas-loading');
+    const closeBtn = document.getElementById('atlas-close');
+
+    let atlasCache = {};
+    let activeAtlas = null;
+    let activeFrameCount = 0;
+    let currentIndex = 0;
+    let touchStartX = null;
+
+    function safeBaseName(name) {
+      return String(name)
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\w\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '_')
+        .toLowerCase();
+    }
+
+    function atlasKeyFromBase(base) {
+      return `${base}_atlas`;
+    }
+
+    function getFrameCountForAtlas(atlasKey) {
+      return atlasFrameOverrides[atlasKey] || DEFAULT_FRAMES;
+    }
+
+    function loadAtlas(atlasKey, frameCount) {
+      if (atlasCache[atlasKey]) {
+        return atlasCache[atlasKey].promise;
+      }
+
+      const img = new Image();
+      img.decoding = 'async';
+      const url = `${ATLAS_FOLDER}/${atlasKey}${ATLAS_EXT}`;
+
+      const promise = new Promise((resolve, reject) => {
+        img.onload = () => {
+          const fc = frameCount || getFrameCountForAtlas(atlasKey);
+          const fw = Math.round(img.width / fc);
+          const fh = img.height;
+          atlasCache[atlasKey] = { img, ready: true, frameCount: fc, frameW: fw, frameH: fh, promise: Promise.resolve() };
+          resolve(atlasCache[atlasKey]);
+        };
+        img.onerror = (e) => {
+          atlasCache[atlasKey] = { img: null, ready: false, error: true, promise: Promise.reject(e) };
+          reject(new Error('Failed to load atlas ' + url));
+        };
+      });
+
+      atlasCache[atlasKey] = { img, ready: false, promise };
+      img.src = url;
+      return promise;
+    }
+
+    function drawFromActiveAtlas() {
+      const data = atlasCache[activeAtlas];
+      if (!data || !data.ready) return;
+
+      const img = data.img;
+      const fc = data.frameCount;
+      const fw = data.frameW;
+      const fh = data.frameH;
+
+      const sX = currentIndex * fw;
+      const sY = 0;
+
+      const maxW = Math.min(window.innerWidth - 40, 1000);
+      const maxH = Math.min(window.innerHeight - 120, window.innerHeight * 0.78);
+
+      let targetW = Math.min(fw, maxW);
+      let targetH = Math.round((fh / fw) * targetW);
+
+      if (targetH > maxH) {
+        targetH = maxH;
+        targetW = Math.round((fw / fh) * targetH);
+      }
+
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = Math.round(targetW * dpr);
+      canvas.height = Math.round(targetH * dpr);
+      canvas.style.width = targetW + 'px';
+      canvas.style.height = targetH + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      ctx.clearRect(0, 0, targetW, targetH);
+      ctx.drawImage(img, sX, sY, fw, fh, 0, 0, targetW, targetH);
+    }
+
+    async function openAtlasViewer(atlasKey, frameCount) {
+      activeAtlas = atlasKey;
+      activeFrameCount = frameCount || getFrameCountForAtlas(atlasKey);
+      currentIndex = 0;
+      slider.max = Math.max(0, activeFrameCount - 1);
+      slider.value = 0;
+
+      viewerEl.style.display = 'flex';
+      viewerEl.setAttribute('aria-hidden', 'false');
+      loadingPill.style.display = 'block';
+      loadingPill.textContent = 'Učitavanje…';
+
+      try {
+        await loadAtlas(atlasKey, activeFrameCount);
+        loadingPill.style.display = 'none';
+        drawFromActiveAtlas();
+      } catch (e) {
+        console.error(e);
+        loadingPill.textContent = 'Greška pri učitavanju';
+        setTimeout(closeAtlasViewer, 900);
+      }
+    }
+
+    function closeAtlasViewer() {
+      viewerEl.style.display = 'none';
+      viewerEl.setAttribute('aria-hidden', 'true');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    slider.addEventListener('input', () => {
+      currentIndex = Number(slider.value);
+      drawFromActiveAtlas();
+    });
+
+    closeBtn.addEventListener('click', closeAtlasViewer);
+    viewerEl.addEventListener('click', (e) => { if (e.target === viewerEl) closeAtlasViewer(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAtlasViewer(); });
+
+    viewerEl.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0]?.clientX ?? null;
+    });
+    viewerEl.addEventListener('touchmove', e => {
+      if (touchStartX == null) return;
+      const x = e.touches[0].clientX;
+      const delta = x - touchStartX;
+      if (Math.abs(delta) > 30) {
+        if (delta > 0 && currentIndex > 0) currentIndex--;
+        else if (delta < 0 && currentIndex < activeFrameCount - 1) currentIndex++;
+        slider.value = currentIndex;
+        drawFromActiveAtlas();
+        touchStartX = x;
+      }
+    });
+    viewerEl.addEventListener('touchend', () => touchStartX = null);
+
+    function bindViewButtons() {
+      document.querySelectorAll('.view-btn').forEach(btn => {
+        if (btn._atlasBound) return;
+        btn._atlasBound = true;
+        btn.addEventListener('click', () => {
+          const atlasKeyAttr = btn.dataset.atlas;
+          const frames = Number(btn.dataset.frames) || undefined;
+          let atlasKey = atlasKeyAttr;
+
+          if (!atlasKey) {
+            const dishName = btn.dataset.name; // original HR
+            const base = safeBaseName(dishName);
+            atlasKey = atlasKeyFromBase(base);
+          }
+
+          openAtlasViewer(atlasKey, frames);
+        });
+      });
+    }
+
+    function showCategory(category) {
+      const menuList = document.getElementById('menuList');
+      const dishes = menu[category] || [];
+
+      // NAPITCI
+      if (category === 'napitci') {
+        menuList.innerHTML = `
+          <ul class="drink-list">
+            ${dishes.map(d => `
+              <li>
+                <span>${t(d.name)}</span>
+                <span class="price">
+                  ${
+                    currentCurrency === 'KM'
+                      ? d.price.toFixed(2) + ' KM'
+                      : kmToEurRounded(d.price).toFixed(2) + ' €'
+                  }
+                </span>
+              </li>
+            `).join('')}
+          </ul>
+        `;
+        return;
+      }
+
+      // FOOD
+      const html = dishes.map(dish => {
+        const baseName = safeBaseName(dish.name); // HR base for atlas
+        const atlasKey = atlasKeyFromBase(baseName);
+        const frameCount = DEFAULT_FRAMES;
+
+        return `
+          <div class="dish">
+            <div class="dish-info">
+              <h3>${t(dish.name)}</h3>
+              <p>${dish.description}</p>
+            </div>
+            <div class="price">${
+              currentCurrency === 'KM'
+                ? dish.price.toFixed(2) + ' KM'
+                : kmToEurRounded(dish.price).toFixed(2) + ' €'
+            }</div>
+            <button class="view-btn"
+              data-atlas="${atlasKey}"
+              data-frames="${frameCount}"
+              data-name="${dish.name}">
+              ${t("Pogledaj jelo")}
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      menuList.innerHTML = html;
+      bindViewButtons();
+    }
+
+    function updateCategoryLabels() {
+      document.querySelectorAll('.category-btn').forEach(btn => {
+        const key = btn.dataset.category;
+        const hrLabel = categoryLabels[key] || key.toUpperCase();
+        btn.textContent = t(hrLabel);
+      });
+    }
+
+    // category buttons
+    document.querySelectorAll('.category-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        showCategory(btn.dataset.category);
+      });
+    });
+
+    // default view
+    updateCategoryLabels();
+    showCategory('sendvic');
+
+    // currency toggle
+    document.getElementById('currencyToggle').addEventListener('click', () => {
+      currentCurrency = currentCurrency === 'KM' ? 'EUR' : 'KM';
+      document.getElementById('currencyToggle').textContent =
+        currentCurrency === 'KM' ? 'KM' : '€';
+
+      const activeBtn = document.querySelector('.category-btn.active');
+      if (activeBtn) showCategory(activeBtn.dataset.category);
+    });
+
+    const langBtn = document.getElementById('langBtn');
+const langMenu = document.getElementById('langMenu');
+const langFlag = document.getElementById('langFlag');
+
+langBtn.addEventListener('click', () => {
+  langMenu.style.display = langMenu.style.display === 'block' ? 'none' : 'block';
+});
+
+langMenu.querySelectorAll('[data-lang]').forEach(item => {
+  item.addEventListener('click', () => {
+    currentLang = item.dataset.lang;
+    langFlag.src = `flags/${currentLang}.png`;
+
+    langMenu.style.display = 'none';
+    updateCategoryLabels();
+
+    const activeBtn = document.querySelector('.category-btn.active');
+    if (activeBtn) showCategory(activeBtn.dataset.category);
+  });
+});
+
+// close on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.lang-dropdown')) {
+    langMenu.style.display = 'none';
+  }
+});
+
+  </script>
+</body>
+</html>
