@@ -25,4 +25,4 @@ even though the viewer is called 3D it is by no means a 3D graphical scan of a d
 
 -vertical atlas logic and overall more stable image handling
 
--monetization options such as popup ads,homepage ads...(google ads)
+-monetization options integration such as popup ads,homepage ads...(google ads)
