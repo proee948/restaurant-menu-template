@@ -12,7 +12,7 @@ is designed to be an easy to modify,implement and copy paste template for QR COD
 # DISH 3D VIEWER
 dish 3D viewer is an addition to this menu meaning it is completely optional, if needed it can be completely removed.
 
-the viewer uses Javascript to load an image inside a popup window, the window contains the loaded image(meant to be an texture atlas) and a user friendly smooth slider for sliding the picture along 5-DIRECTIONAL VIEW.
+the viewer uses Javascript to load an image inside a popup window, the window contains the loaded image(meant to be an texture atlas) and a user friendly smooth slider for sliding the picture along 5-DIRECTIONAL VIEW(can be more directions as long as ASPECT RATIO limitation is met).
 
 the viewer, by default expects a TEXTURE ATLAS. meaning one picture that contains n amount of smaller pictures, which JS then processes and loads accordingly.
 
