@@ -20,6 +20,8 @@ the default set by myself is a HORIZONTAL TEXTURE ATLAS(VERTICAL NOT SUPPORTED!!
 
 even though the viewer is called 3D it is by no means a 3D graphical scan of a dish, it simply uses pictures and allows sliding across them rapidly and thus gives an illusion of having a real object infront of you in three dimensions. having an actual 3D rendered system for each dish would be incredibly inneficient,hard to do and would look like dogshit.
 
+the atlas system expects a napoli_atlas.png like structure of a picture, meaning all atlases must follow DISHNAME_atlas.png structure, otherwise they WILL NOT LOAD.
+
 # soon to be added
 -table ordering system in JS
 
