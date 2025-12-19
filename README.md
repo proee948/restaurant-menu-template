@@ -14,7 +14,7 @@ dish 3D viewer is an addition to this menu meaning it is completely optional, if
 
 the viewer uses Javascript to load an image inside a popup window, the window contains the loaded image(meant to be an texture atlas) and a user friendly smooth slider for sliding the picture along 5-DIRECTIONAL VIEW(can be more directions as long as ASPECT RATIO limitation is met).
 
-the viewer, by default expects a TEXTURE ATLAS. meaning one picture that contains n amount of smaller pictures, which JS then processes and loads accordingly.
+the viewer, by default expects a TEXTURE ATLAS. meaning one picture that contains (n) amount of smaller pictures, which JS then processes and loads accordingly.
 
 the default set by myself is a HORIZONTAL TEXTURE ATLAS(VERTICAL NOT SUPPORTED!!!!! as of yet) containing no more than n pictures whose combined aspect ratio equals 2048 x 2048 px... this aspect ratio however shall not be exceeded due to issues of android/IOS devices, if this safety ceiling were however to be exceeded, certain loading errors will occur, so its best to leave it be and work within its constraints. ||||to be clear atlas.png or any other atlas SHALL NOT exceed 2048 x 2048!||||
 
