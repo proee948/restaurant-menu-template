@@ -1,5 +1,5 @@
 # RESTAURANT-MENU-TEMPLATE
-is designed to be an easy to modify,implement and copy paste template for QR CODE restaurant menu systems.
+is designed to be an easy to modify,implement and copy/paste template for QR CODE restaurant menu systems.
 
 # FEATURES
 1. simple and user friendly interface.
