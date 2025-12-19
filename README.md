@@ -16,7 +16,7 @@ the viewer uses Javascript to load an image inside a popup window, the window co
 
 the viewer, by default expects a TEXTURE ATLAS. meaning one picture that contains (n) amount of smaller pictures, which JS then processes and loads according to their X and Y coordinates.
 
-the default set by myself is a HORIZONTAL TEXTURE ATLAS(VERTICAL NOT SUPPORTED!!!!! as of yet) containing no more than n pictures whose combined aspect ratio equals 2048 x 2048 px... this aspect ratio however shall not be exceeded due to issues of android/IOS devices, if this safety ceiling were however to be exceeded, certain loading errors will occur, so its best to leave it be and work within its constraints. ||||to be clear atlas.png or any other atlas SHALL NOT exceed 2048 x 2048!||||
+the default set by myself is a HORIZONTAL TEXTURE ATLAS(VERTICAL NOT SUPPORTED!!!!! as of yet) containing no more than (n) pictures whose combined aspect ratio equals 2048 x 2048 px... this aspect ratio however shall not be exceeded due to issues of android/IOS devices, if this safety ceiling were however to be exceeded, certain loading errors will occur, so its best to leave it be and work within its constraints. ||||to be clear atlas.png or any other atlas SHALL NOT exceed 2048 x 2048! for compatibility reasons||||
 
 even though the viewer is called 3D it is by no means a 3D scan of dish, it simply uses pictures and allows sliding across them rapidly and thus gives an illusion of having a real object infront of you in three dimension. having an actual 3D rendered system for each dish would be incredibly inneficient,hard to do and would look like dogshit.
 
