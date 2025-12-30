@@ -20,11 +20,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const translations = {
       // KATEGORIJE
-      "SENDVIČ": { en: "Sandwiches", it: "Panini", de: "Sandwiches", ph: "mga Sandwich" },
-      "PIZZA": { en: "Pizza", it: "Pizza", de: "Pizza", ph: "Pizza" },
-      "STEKOVI": { en: "Steaks", it: "Bistecche", de: "Steaks", ph: "mga steak" },
-      "JELA PO NARUDŽBI": { en: "Dishes à la carte", it: "Piatti à la carte", de: "Gerichte à la carte", ph: "À la carte dishes" },
-      "DESERT": { en: "Desserts", it: "Dolci", de: "Desserts", ph: "Desserts" },
+      "SENDVIČ": { en: "SANDWICHES", it: "PANINI", de: "SANDWICHES", ph: "MGA SANDWICH" },
+      "PIZZA": { en: "PIZZA", it: "PIZZA", de: "PIZZA", ph: "PIZZA" },
+      "STEKOVI": { en: "STEAKS", it: "BISTECCHE", de: "STEAKS", ph: "MGA STEAK" },
+      "JELA PO NARUDŽBI": { en: "DISHES à LA CARTE", it: "PIATTI à LA CARTE", de: "GERICHTE à LA CARTE", ph: "À LA CARTE DISHES" },
+      "DESERT": { en: "DESSERTS", it: "DESSERTS", de: "DESSERTS", ph: "DESSERTS" },
       "DORUČAK": { en: "Breakfast", it: "Colazione", de: "Frühstück", ph: "almusal" },
       "HLADNA PREDJELA": { en: "Cold starters", it: "Antipasti freddi", de: "Kalte Vorspeisen", ph: "malamig na panimula" },
       "JUHE": { en: "Soups", it: "Zuppe", de: "Suppen", ph: "mga sopas" },
